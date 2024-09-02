@@ -1,5 +1,7 @@
 // Variables globales
 let db;
+// Variable global para almacenar el ID a eliminar
+let flowerIdToDelete;
 
 window.onload = () => {
     // Abrir o crear la base de datos
@@ -97,95 +99,103 @@ function loadFlowers() {
                         </div>
                     </td>
                 `;
-                flowerList.appendChild(tr);
-                cursor.continue();
-            }
-        };
-    }
-    
-    // Función para editar una flor (abrir modal)
-    function editFlower(id, flowerName, packageQuantity, description, dateTime) {
-        document.getElementById("editId").value = id;
-        document.getElementById("editFlowerName").value = flowerName;
-        document.getElementById("editPackageQuantity").value = packageQuantity;
-        document.getElementById("editDescription").value = description;
-        document.getElementById("editDateTime").value = dateTime;
-        new bootstrap.Modal(document.getElementById("editModal")).show();
-    }
-    
-    // Función para guardar los cambios de edición
-    function saveChanges() {
-        let id = parseInt(document.getElementById("editId").value);
-        let flowerName = document.getElementById("editFlowerName").value;
-        let packageQuantity = document.getElementById("editPackageQuantity").value;
-        let description = document.getElementById("editDescription").value;
-        let dateTime = document.getElementById("editDateTime").value;
-    
-        let transaction = db.transaction(["flowers"], "readwrite");
-        let objectStore = transaction.objectStore("flowers");
-    
-        let request = objectStore.put({ id, flowerName, packageQuantity, description, dateTime });
-    
-        request.onsuccess = () => {
-            loadFlowers();
-            document.getElementById("editModal").querySelector(".btn-close").click();
-        };
-    
-        request.onerror = (event) => {
-            console.error("Error al guardar los cambios:", event);
-        };
-    }
-    
-    // Función para mostrar un mensaje de confirmación antes de eliminar
-    function confirmDelete(id) {
-        if (confirm("¿Estás seguro de que deseas eliminar esta flor?")) {
-            deleteFlower(id);
+            flowerList.appendChild(tr);
+            cursor.continue();
         }
-    }
-    
-    // Función para eliminar una flor
-    function deleteFlower(id) {
-        let transaction = db.transaction(["flowers"], "readwrite");
-        let objectStore = transaction.objectStore("flowers");
-    
-        let request = objectStore.delete(id);
-    
-        request.onsuccess = () => {
-            loadFlowers();
-        };
-    
-        request.onerror = (event) => {
-            console.error("Error al eliminar la flor:", event);
-        };
-    }
-    
-    // Función para buscar en la tabla
-    function searchTable() {
-        let filter = document.getElementById("search").value.toLowerCase();
-        let rows = document.getElementById("flowerList").getElementsByTagName("tr");
-    
-        Array.from(rows).forEach(row => {
-            let columns = row.getElementsByTagName("td");
-            let match = false;
-    
-            Array.from(columns).forEach(column => {
-                if (column.textContent.toLowerCase().includes(filter)) {
-                    match = true;
-                }
-            });
-    
-            if (match) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
+    };
+}
+
+// Función para editar una flor (abrir modal)
+function editFlower(id, flowerName, packageQuantity, description, dateTime) {
+    document.getElementById("editId").value = id;
+    document.getElementById("editFlowerName").value = flowerName;
+    document.getElementById("editPackageQuantity").value = packageQuantity;
+    document.getElementById("editDescription").value = description;
+    document.getElementById("editDateTime").value = dateTime;
+    new bootstrap.Modal(document.getElementById("editModal")).show();
+}
+
+// Función para guardar los cambios de edición
+function saveChanges() {
+    let id = parseInt(document.getElementById("editId").value);
+    let flowerName = document.getElementById("editFlowerName").value;
+    let packageQuantity = document.getElementById("editPackageQuantity").value;
+    let description = document.getElementById("editDescription").value;
+    let dateTime = document.getElementById("editDateTime").value;
+
+    let transaction = db.transaction(["flowers"], "readwrite");
+    let objectStore = transaction.objectStore("flowers");
+
+    let request = objectStore.put({ id, flowerName, packageQuantity, description, dateTime });
+
+    request.onsuccess = () => {
+        loadFlowers();
+        document.getElementById("editModal").querySelector(".btn-close").click();
+    };
+
+    request.onerror = (event) => {
+        console.error("Error al guardar los cambios:", event);
+    };
+}
+
+
+
+// Función para mostrar el modal de confirmación antes de eliminar
+function confirmDelete(id) {
+    flowerIdToDelete = id;
+    new bootstrap.Modal(document.getElementById("deleteModal")).show();
+}
+
+// Añadir un event listener al botón de confirmación de eliminación en el modal
+document.getElementById("confirmDeleteBtn").onclick = function () {
+    deleteFlower(flowerIdToDelete);
+    document.getElementById("deleteModal").querySelector(".btn-close").click();
+};
+
+// Función para eliminar una flor
+function deleteFlower(id) {
+    let transaction = db.transaction(["flowers"], "readwrite");
+    let objectStore = transaction.objectStore("flowers");
+
+    let request = objectStore.delete(id);
+
+    request.onsuccess = () => {
+        loadFlowers();
+    };
+
+    request.onerror = (event) => {
+        console.error("Error al eliminar la flor:", event);
+    };
+}
+
+
+// Función para buscar en la tabla
+function searchTable() {
+    let filter = document.getElementById("search").value.toLowerCase();
+    let rows = document.getElementById("flowerList").getElementsByTagName("tr");
+
+    Array.from(rows).forEach(row => {
+        let columns = row.getElementsByTagName("td");
+        let match = false;
+
+        Array.from(columns).forEach(column => {
+            if (column.textContent.toLowerCase().includes(filter)) {
+                match = true;
             }
         });
-    }
-    
-    // Función para exportar a Excel
-    function exportToExcel() {
-        let table = document.getElementById("flowerTable");
-        let wb = XLSX.utils.table_to_book(table, { sheet: "Flores" });
-        XLSX.writeFile(wb, "flores.xlsx");
-    }
-    
+
+        if (match) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+// Función para exportar a Excel
+function exportToExcel() {
+    let table = document.getElementById("flowerTable");
+    let wb = XLSX.utils.table_to_book(table, { sheet: "Flores" });
+    XLSX.writeFile(wb, "flores.xlsx");
+}
+
